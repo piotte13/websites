@@ -552,6 +552,13 @@
           <span id="wMin"></span><span style="color:#aab">← poids →</span><span id="wMax"></span>
         </div>
       </div>
+      <div class="chart-card">
+        <h3>📏 Taille prédite (survoler pour voir qui)</h3>
+        <div class="weight-scatter" id="heightScatter"></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#aab;font-weight:700;margin-top:8px;">
+          <span id="hMin"></span><span style="color:#aab">← taille →</span><span id="hMax"></span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -747,7 +754,42 @@ makeBarChart(document.getElementById('hairChart'), sorted(count(data,'hair')), l
   });
 })();
 
-// Date bar chart
+// Height scatter
+(function(){
+  const hData=data.filter(d=>d.height_cm);
+  const min=Math.min(...hData.map(d=>d.height_cm));
+  const max=Math.max(...hData.map(d=>d.height_cm));
+  const avg=hData.reduce((s,d)=>s+d.height_cm,0)/hData.length;
+  const scatter=document.getElementById('heightScatter');
+  scatter.innerHTML='';
+  document.getElementById('hMin').textContent=min+' cm';
+  document.getElementById('hMax').textContent=max+' cm';
+  const avgPct=(avg-min)/(max-min)*100;
+  const line=document.createElement('div');
+  line.className='w-avg-line';
+  line.style.left=avgPct+'%';
+  scatter.appendChild(line);
+  const lbl=document.createElement('div');
+  lbl.className='w-label';
+  lbl.style.left=(avgPct+0.8)+'%';
+  lbl.textContent='∅ '+Math.round(avg)+' cm';
+  scatter.appendChild(lbl);
+  const rows=3;
+  hData.forEach((d,i)=>{
+    const pct=(d.height_cm-min)/(max-min)*94+3;
+    const row=i%rows;
+    const topPct=20+row*28;
+    const dot=document.createElement('div');
+    dot.className='w-dot';
+    dot.style.left=pct+'%';
+    dot.style.top=topPct+'%';
+    dot.style.background=palette[i%palette.length];
+    dot.addEventListener('mouseover',e=>showTip(e,`<b>${d.name}</b><br>📏 ${d.height_cm} cm`));
+    dot.addEventListener('mousemove',moveTip);
+    dot.addEventListener('mouseout',hideTip);
+    scatter.appendChild(dot);
+  });
+})();
 (function(){
   const dateCounts={};
   data.forEach(d=>{dateCounts[d.date]=(dateCounts[d.date]||0)+1;});
