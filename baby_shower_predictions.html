@@ -1,541 +1,884 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prédictions Bébé — Baby Shower</title>
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --powder: #f8e8f0;
-      --mint: #e8f5e9;
-      --sky: #e3f2fd;
-      --cream: #fff8f0;
-      --coral: #ffb3ba;
-      --soft-blue: #bae1ff;
-      --lavender: #e2d4f0;
-      --text: #4a4a4a;
-      --accent: #ff9a9e;
-      --shadow: rgba(0,0,0,0.08);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Quicksand', sans-serif;
-      background: linear-gradient(135deg, var(--powder) 0%, var(--mint) 50%, var(--sky) 100%);
-      min-height: 100vh;
-      color: var(--text);
-      padding: 2rem 1rem 3rem;
-    }
-    h1 {
-      font-family: 'Fredoka', sans-serif;
-      text-align: center;
-      font-size: 2.2rem;
-      color: #e91e63;
-      margin-bottom: 0.5rem;
-      text-shadow: 2px 2px 0 var(--coral);
-    }
-    .subtitle {
-      text-align: center;
-      font-size: 1rem;
-      color: #888;
-      margin-bottom: 2rem;
-    }
-    .tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      justify-content: center;
-      margin-bottom: 1.5rem;
-    }
-    .tab {
-      font-family: 'Fredoka', sans-serif;
-      padding: 0.6rem 1.2rem;
-      border: none;
-      border-radius: 2rem;
-      background: white;
-      color: var(--text);
-      cursor: pointer;
-      font-size: 0.95rem;
-      box-shadow: 0 2px 8px var(--shadow);
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .tab:hover { transform: translateY(-2px); box-shadow: 0 4px 12px var(--shadow); }
-    .tab.active {
-      background: linear-gradient(135deg, var(--coral), #e91e63);
-      color: white;
-    }
-    .panel {
-      display: none;
-      max-width: 900px;
-      margin: 0 auto;
-      background: rgba(255,255,255,0.85);
-      border-radius: 1.5rem;
-      padding: 1.5rem;
-      box-shadow: 0 8px 24px var(--shadow);
-    }
-    .panel.active { display: block; animation: fadeIn 0.3s ease; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .chart-container {
-      position: relative;
-      height: 220px;
-      margin: 1rem 0;
-    }
-    .chart-title {
-      font-family: 'Fredoka', sans-serif;
-      font-size: 1.1rem;
-      margin-bottom: 0.5rem;
-      color: #c2185b;
-    }
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-top: 0.75rem;
-      font-size: 0.9rem;
-    }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-    .legend-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-    }
-    th, td {
-      padding: 0.6rem 0.8rem;
-      text-align: left;
-      border-bottom: 1px solid #eee;
-    }
-    th {
-      font-family: 'Fredoka', sans-serif;
-      background: linear-gradient(135deg, var(--coral), #f48fb1);
-      color: white;
-      position: sticky;
-      top: 0;
-    }
-    tr:hover td { background: var(--powder); }
-    .names-cloud {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 1rem;
-    }
-    .name-tag {
-      padding: 0.4rem 0.8rem;
-      background: linear-gradient(135deg, var(--soft-blue), var(--lavender));
-      border-radius: 1rem;
-      font-weight: 600;
-      font-size: 0.95rem;
-    }
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .stat-card {
-      background: linear-gradient(135deg, white, var(--cream));
-      border-radius: 1rem;
-      padding: 1rem;
-      text-align: center;
-      box-shadow: 0 2px 8px var(--shadow);
-    }
-    .stat-value {
-      font-family: 'Fredoka', sans-serif;
-      font-size: 1.8rem;
-      color: #e91e63;
-    }
-    .stat-label { font-size: 0.85rem; color: #666; margin-top: 0.25rem; }
-    .bar-row {
-      display: flex;
-      align-items: center;
-      margin-bottom: 0.6rem;
-      gap: 0.5rem;
-    }
-    .bar-label { min-width: 100px; font-size: 0.9rem; }
-    .bar-track {
-      flex: 1;
-      height: 24px;
-      background: #f0f0f0;
-      border-radius: 12px;
-      overflow: hidden;
-    }
-    .bar-fill {
-      height: 100%;
-      border-radius: 12px;
-      transition: width 0.5s ease;
-    }
-    .papa { background: linear-gradient(90deg, #64b5f6, #42a5f5); }
-    .maman { background: linear-gradient(90deg, #f48fb1, #ec407a); }
-    .filter-row {
-      margin-bottom: 1rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: center;
-    }
-    .filter-row input {
-      padding: 0.5rem 0.8rem;
-      border: 2px solid #eee;
-      border-radius: 0.5rem;
-      font-family: inherit;
-      flex: 1;
-      min-width: 150px;
-    }
-    .date-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-      gap: 0.5rem;
-    }
-    .date-cell {
-      padding: 0.5rem;
-      text-align: center;
-      background: #f5f5f5;
-      border-radius: 0.5rem;
-      font-size: 0.85rem;
-    }
-    .date-cell.has-pred { background: linear-gradient(135deg, var(--coral), #f48fb1); color: white; }
-    .date-cell .count { font-weight: 700; font-size: 1.1rem; }
-    .emoji { font-size: 1.2rem; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prédictions Baby Shower 👶</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #b8e4f9;
+    --cloud: #e8f6ff;
+    --mint: #a8e6cf;
+    --peach: #ffcba4;
+    --yellow: #ffe082;
+    --lavender: #d4b8f0;
+    --coral: #ff8a80;
+    --text: #3a3a5c;
+    --card: #ffffffdd;
+    --shadow: 0 8px 32px rgba(100,120,200,0.13);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(160deg, #d0eeff 0%, #f0f8ff 40%, #fde8d8 100%);
+    min-height: 100vh;
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  .cloud {
+    position: fixed;
+    background: white;
+    border-radius: 50px;
+    opacity: 0.55;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .cloud::before, .cloud::after {
+    content: '';
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+  }
+  .cloud-1 { width: 120px; height: 40px; top: 8%; left: -5%; animation: drift 28s linear infinite; }
+  .cloud-1::before { width: 60px; height: 60px; top: -30px; left: 15px; }
+  .cloud-1::after { width: 40px; height: 40px; top: -20px; left: 55px; }
+  .cloud-2 { width: 80px; height: 28px; top: 25%; left: -3%; animation: drift 20s linear infinite 6s; opacity: 0.35; }
+  .cloud-2::before { width: 40px; height: 40px; top: -20px; left: 10px; }
+  .cloud-2::after { width: 28px; height: 28px; top: -14px; left: 38px; }
+  .cloud-3 { width: 100px; height: 34px; top: 60%; left: -4%; animation: drift 35s linear infinite 12s; opacity: 0.3; }
+  .cloud-3::before { width: 50px; height: 50px; top: -25px; left: 12px; }
+  .cloud-3::after { width: 35px; height: 35px; top: -17px; left: 50px; }
+
+  @keyframes drift { from { transform: translateX(-200px); } to { transform: translateX(110vw); } }
+
+  .dots-bg {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: radial-gradient(circle, rgba(180,200,255,0.18) 1.5px, transparent 1.5px);
+    background-size: 38px 38px;
+  }
+
+  .wrapper {
+    position: relative; z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 18px 60px;
+  }
+
+  header {
+    text-align: center;
+    padding: 48px 20px 32px;
+  }
+  .stork-emoji { font-size: 64px; display: block; animation: bob 2.4s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  header h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2rem, 6vw, 3.6rem);
+    color: #5b7dd8;
+    letter-spacing: 1px;
+    margin: 10px 0 6px;
+    text-shadow: 3px 3px 0 #d0e6ff;
+  }
+  header p {
+    font-size: 1.1rem;
+    color: #8899cc;
+    font-weight: 700;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 28px 0 32px;
+  }
+  .tab-btn {
+    background: white;
+    border: 3px solid transparent;
+    border-radius: 50px;
+    padding: 10px 22px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #8899cc;
+    cursor: pointer;
+    transition: all 0.22s;
+    box-shadow: 0 4px 14px rgba(100,140,220,0.12);
+  }
+  .tab-btn:hover { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(100,140,220,0.2); }
+  .tab-btn.active {
+    background: linear-gradient(135deg, #7ab3f0, #b47ff0);
+    color: white;
+    border-color: white;
+    box-shadow: 0 6px 22px rgba(120,140,240,0.32);
+    transform: translateY(-2px);
+  }
+
+  .section { display: none; animation: fadeIn 0.4s ease; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  .section-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.7rem;
+    color: #6b8ee0;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 22px;
+    margin-bottom: 28px;
+  }
+
+  .chart-card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 24px 20px 18px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(8px);
+    border: 2px solid rgba(255,255,255,0.8);
+    transition: transform 0.2s;
+  }
+  .chart-card:hover { transform: translateY(-4px); }
+  .chart-card h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.15rem;
+    color: #7b8ed0;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .bar-group { margin: 7px 0; }
+  .bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .bar-track {
+    background: #e8eeff;
+    border-radius: 20px;
+    height: 18px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 20px;
+    transition: width 1s cubic-bezier(.4,0,.2,1);
+    width: 0;
+  }
+
+  .donut-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  svg.donut { flex-shrink: 0; }
+  .donut-legend { flex: 1; min-width: 100px; }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin: 5px 0;
+  }
+  .legend-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+
+  .timeline-wrap { overflow-x: auto; padding-bottom: 8px; }
+  .timeline-inner { min-width: 500px; position: relative; }
+  .timeline-axis {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #aabbdd;
+    font-weight: 700;
+    margin-bottom: 6px;
+    padding: 0 4px;
+  }
+  .timeline-track {
+    height: 12px;
+    background: #e8eeff;
+    border-radius: 20px;
+    position: relative;
+    margin-bottom: 14px;
+  }
+  .timeline-dot {
+    position: absolute;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    cursor: pointer;
+    transition: transform 0.15s;
+    border: 2px solid white;
+  }
+  .timeline-dot:hover { transform: translateX(-50%) scale(1.5); z-index: 5; }
+
+  .tooltip {
+    position: fixed;
+    background: #3a3a5cee;
+    color: white;
+    border-radius: 12px;
+    padding: 9px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    pointer-events: none;
+    z-index: 999;
+    display: none;
+    max-width: 200px;
+    line-height: 1.5;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  }
+
+  .table-wrap { overflow-x: auto; border-radius: 20px; box-shadow: var(--shadow); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    backdrop-filter: blur(8px);
+    border-radius: 20px;
+    overflow: hidden;
+    font-size: 0.88rem;
+  }
+  thead tr { background: linear-gradient(135deg, #7ab3f0, #b47ff0); color: white; }
+  th { padding: 13px 12px; font-family: 'Fredoka One', cursive; font-size: 0.95rem; text-align: left; white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1.5px solid #e8eeff; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #f4f8ff88; }
+  tr:hover td { background: #e8f0ff99; }
+
+  .prediction-banner {
+    background: linear-gradient(135deg, #ffe082, #ffcba4, #ffb3c6);
+    border-radius: 28px;
+    padding: 28px 32px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 40px rgba(255,160,80,0.2);
+    position: relative;
+    overflow: hidden;
+  }
+  .prediction-banner::before {
+    content: '🔮';
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 72px;
+    opacity: 0.18;
+  }
+  .prediction-banner h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.6rem;
+    color: #7a4a00;
+    margin-bottom: 14px;
+  }
+  .pred-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+  }
+  .pred-item {
+    background: rgba(255,255,255,0.62);
+    border-radius: 16px;
+    padding: 12px 14px;
+    backdrop-filter: blur(6px);
+  }
+  .pred-item .label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #c47a30;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin-bottom: 4px;
+  }
+  .pred-item .value {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.18rem;
+    color: #5a3600;
+  }
+  .pred-item .sub {
+    font-size: 0.78rem;
+    color: #a06030;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  .weight-scatter {
+    position: relative;
+    height: 80px;
+    background: linear-gradient(90deg, #e0f0ff, #ffe8f0);
+    border-radius: 16px;
+    overflow: visible;
+  }
+  .w-dot {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #7ab3f0;
+    border: 2px solid white;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .w-dot:hover { transform: translate(-50%, -50%) scale(1.6); z-index: 3; }
+  .w-avg-line {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: #ff6b8a;
+  }
+  .w-label {
+    position: absolute;
+    top: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #ff6b8a;
+    white-space: nowrap;
+  }
+
+  .clock-face {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: white;
+    border: 4px solid #b8d8f8;
+    position: relative;
+    margin: 10px auto;
+    box-shadow: 0 4px 18px rgba(100,160,240,0.15);
+  }
+  .clock-face::after {
+    content: '';
+    position: absolute;
+    width: 6px; height: 6px;
+    background: #7ab3f0;
+    border-radius: 50%;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    z-index: 3;
+  }
+  .hour-hand, .min-hand {
+    position: absolute;
+    bottom: 50%;
+    left: 50%;
+    transform-origin: bottom center;
+    border-radius: 4px;
+    z-index: 2;
+  }
+  .hour-hand {
+    width: 4px;
+    height: 32px;
+    background: #5b7dd8;
+    margin-left: -2px;
+  }
+  .min-hand {
+    width: 3px;
+    height: 44px;
+    background: #b47ff0;
+    margin-left: -1.5px;
+  }
+  .clock-num {
+    position: absolute;
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: #aac0e8;
+    transform: translate(-50%,-50%);
+  }
+
+  .name-bubbles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .name-bubble {
+    color: white;
+    border-radius: 50px;
+    padding: 5px 14px;
+    font-weight: 800;
+    font-size: 0.88rem;
+    box-shadow: 0 3px 10px rgba(100,180,200,0.2);
+  }
+  .name-bubble .cnt {
+    display: inline-block;
+    background: rgba(255,255,255,0.35);
+    border-radius: 50%;
+    width: 18px; height: 18px;
+    text-align: center;
+    line-height: 18px;
+    font-size: 0.72rem;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 50px;
+    padding: 8px 18px;
+    box-shadow: 0 4px 16px rgba(100,140,220,0.13);
+    margin-bottom: 18px;
+    gap: 10px;
+    max-width: 340px;
+  }
+  .search-bar input {
+    border: none;
+    outline: none;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    width: 100%;
+    background: transparent;
+  }
+
+  footer {
+    text-align: center;
+    padding: 28px 0 8px;
+    font-size: 0.85rem;
+    color: #aab8d8;
+    font-weight: 700;
+  }
+
+  @media (max-width: 600px) {
+    .pred-grid { grid-template-columns: 1fr 1fr; }
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+</style>
 </head>
 <body>
-  <h1>👶 Prédictions pour bébé</h1>
-  <p class="subtitle">Résultats du baby shower — Qui a deviné quoi ?</p>
+
+<div class="dots-bg"></div>
+<div class="cloud cloud-1"></div>
+<div class="cloud cloud-2"></div>
+<div class="cloud cloud-3"></div>
+<div class="tooltip" id="tooltip"></div>
+
+<div class="wrapper">
+  <header>
+    <span class="stork-emoji">🍼</span>
+    <h1>Prédictions Baby Shower</h1>
+    <p>24 participants · C'est un garçon! 💙</p>
+  </header>
 
   <div class="tabs">
-    <button class="tab active" data-panel="overview">Vue d'ensemble</button>
-    <button class="tab" data-panel="dates">Dates & heures</button>
-    <button class="tab" data-panel="looks">Yeux, cheveux, taille</button>
-    <button class="tab" data-panel="resemble">À qui il ressemble</button>
-    <button class="tab" data-panel="prenoms">Prénoms suggérés</button>
-    <button class="tab" data-panel="table">Toutes les réponses</button>
+    <button class="tab-btn active" onclick="showTab('oracle',this)">🔮 Oracle</button>
+    <button class="tab-btn" onclick="showTab('stats',this)">📊 Statistiques</button>
+    <button class="tab-btn" onclick="showTab('dates',this)">📅 Dates & Heures</button>
+    <button class="tab-btn" onclick="showTab('prenoms',this)">✨ Prénoms</button>
+    <button class="tab-btn" onclick="showTab('tous',this)">👶 Tous les votes</button>
   </div>
 
-  <div id="panel-overview" class="panel active">
-    <div class="stats-grid">
-      <div class="stat-card"><span class="stat-value" id="stat-count">0</span><div class="stat-label">Participants</div></div>
-      <div class="stat-card"><span class="stat-value" id="stat-dates">0</span><div class="stat-label">Dates différentes</div></div>
-      <div class="stat-card"><span class="stat-value" id="stat-prenoms">0</span><div class="stat-label">Prénoms proposés</div></div>
+  <!-- ORACLE TAB -->
+  <div class="section active" id="tab-oracle">
+    <div class="prediction-banner">
+      <h2>🔮 La Prédiction Finale</h2>
+      <div class="pred-grid">
+        <div class="pred-item">
+          <div class="label">📅 Date de naissance</div>
+          <div class="value">18 mai 2026</div>
+          <div class="sub">5 votes · la plus populaire</div>
+        </div>
+        <div class="pred-item">
+          <div class="label">🕐 Heure probable</div>
+          <div class="value">~12h31</div>
+          <div class="sub">Moyenne des 24 votes</div>
+        </div>
+        <div class="pred-item">
+          <div class="label">👁️ Couleur des yeux</div>
+          <div class="value">Verts</div>
+          <div class="sub">13 votes sur 24</div>
+        </div>
+        <div class="pred-item">
+          <div class="label">💇 Couleur cheveux</div>
+          <div class="value">Bruns</div>
+          <div class="sub">17 votes sur 24</div>
+        </div>
+        <div class="pred-item">
+          <div class="label">⚖️ Poids prédit</div>
+          <div class="value">7 lbs 4 oz</div>
+          <div class="sub">Médiane des votes</div>
+        </div>
+        <div class="pred-item">
+          <div class="label">📏 Taille prédite</div>
+          <div class="value">~51 cm</div>
+          <div class="sub">Médiane des votes</div>
+        </div>
+        <div class="pred-item">
+          <div class="label">👶 Ressemblance</div>
+          <div class="value">Papa</div>
+          <div class="sub">12 votes sur 23</div>
+        </div>
+        <div class="pred-item">
+          <div class="label">✨ Prénom favori</div>
+          <div class="value">Léo / Leo</div>
+          <div class="sub">Mentionné 5 fois!</div>
+        </div>
+      </div>
     </div>
-    <div class="chart-title">📅 Répartition des dates de naissance prédites</div>
-    <div id="overview-dates" class="date-grid"></div>
-    <div class="chart-title" style="margin-top:1.5rem">👁️ Couleur des yeux</div>
-    <div id="overview-eyes" class="chart-container"></div>
-    <div id="legend-eyes" class="legend"></div>
-    <div class="chart-title" style="margin-top:1rem">💇 Couleur des cheveux</div>
-    <div id="overview-hair" class="chart-container"></div>
-    <div id="legend-hair" class="legend"></div>
+
+
   </div>
 
-  <div id="panel-dates" class="panel">
-    <div class="chart-title">📅 Dates de naissance prédites (mai–juin 2026)</div>
-    <div id="dates-chart" class="date-grid"></div>
-    <div class="chart-title" style="margin-top:1.5rem">🕐 Heures de naissance</div>
-    <div id="times-chart" class="chart-container"></div>
-    <div id="legend-times" class="legend"></div>
-  </div>
-
-  <div id="panel-looks" class="panel">
-    <div class="chart-title">⚖️ Poids prédits (livres)</div>
-    <div id="weight-bars"></div>
-    <div class="chart-title" style="margin-top:1.5rem">📏 Taille prédite (cm)</div>
-    <div id="height-bars"></div>
-    <div class="chart-title" style="margin-top:1.5rem">👁️ Yeux</div>
-    <div id="eyes-bars"></div>
-    <div id="legend-eyes2" class="legend"></div>
-    <div class="chart-title" style="margin-top:1rem">💇 Cheveux</div>
-    <div id="hair-bars"></div>
-    <div id="legend-hair2" class="legend"></div>
-  </div>
-
-  <div id="panel-resemble" class="panel">
-    <div class="chart-title">👨‍👩‍👦 À qui bébé va ressembler le plus ?</div>
-    <div id="resemble-chart" class="chart-container"></div>
-    <div id="legend-resemble" class="legend"></div>
-  </div>
-
-  <div id="panel-prenoms" class="panel">
-    <div class="chart-title">✨ Prénoms suggérés par les invités</div>
-    <div id="prenoms-cloud" class="names-cloud"></div>
-  </div>
-
-  <div id="panel-table" class="panel">
-    <div class="filter-row">
-      <input type="text" id="table-search" placeholder="Rechercher un participant...">
+  <!-- STATS TAB -->
+  <div class="section" id="tab-stats">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>👁️ Couleur des yeux</h3>
+        <div id="eyeChart"></div>
+      </div>
+      <div class="chart-card">
+        <h3>💇 Couleur des cheveux</h3>
+        <div id="hairChart"></div>
+      </div>
+      <div class="chart-card">
+        <h3>👨‍👩‍👦 À qui ressemble-t-il ?</h3>
+        <div class="donut-wrap">
+          <svg class="donut" width="100" height="100" viewBox="0 0 100 100" id="donutSvg"></svg>
+          <div class="donut-legend" id="donutLegend"></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h3>⚖️ Poids prédit (hover pour voir qui)</h3>
+        <div class="weight-scatter" id="weightScatter"></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#aab;font-weight:700;margin-top:8px;">
+          <span id="wMin"></span><span style="color:#aab">← poids →</span><span id="wMax"></span>
+        </div>
+      </div>
     </div>
-    <div style="overflow-x: auto;">
-      <table id="data-table">
+  </div>
+
+  <!-- DATES TAB -->
+  <div class="section" id="tab-dates">
+    <div class="chart-card" style="margin-bottom:22px;">
+      <h3>📅 Votes par date de naissance</h3>
+      <div id="dateBarChart"></div>
+    </div>
+    <div class="chart-card">
+      <h3>🕐 Heures prédites (hover pour voir qui)</h3>
+      <div class="timeline-wrap">
+        <div class="timeline-inner">
+          <div class="timeline-axis" id="hourAxis"></div>
+          <div class="timeline-track" id="hourTrack"></div>
+        </div>
+      </div>
+      <div style="font-size:0.8rem;color:#aab;font-weight:600;margin-top:6px;">Chaque point = un participant &nbsp;·&nbsp; <span style="color:#ff6b8a">●</span> = heure moyenne (13h30)</div>
+    </div>
+  </div>
+
+  <!-- PRENOMS TAB -->
+  <div class="section" id="tab-prenoms">
+    <div class="chart-card" style="margin-bottom:22px;">
+      <h3>🔥 Prénoms mentionnés plus d'une fois</h3>
+      <div id="prenomBars"></div>
+    </div>
+    <div class="chart-card">
+      <h3>💬 Tous les prénoms proposés</h3>
+      <div class="name-bubbles" id="allNames"></div>
+    </div>
+  </div>
+
+  <!-- TOUS TAB -->
+  <div class="section" id="tab-tous">
+    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px;">
+      <div class="section-title" style="margin-bottom:0;">👶 Toutes les prédictions</div>
+      <div class="search-bar">
+        <span>🔍</span>
+        <input type="text" id="searchInput" placeholder="Chercher un participant…" oninput="filterTable()">
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="mainTable">
         <thead>
           <tr>
-            <th>Participant</th>
-            <th>Date naissance</th>
-            <th>Heure</th>
-            <th>Yeux</th>
-            <th>Cheveux</th>
-            <th>Poids</th>
-            <th>Taille</th>
-            <th>Ressemble à</th>
-            <th>Prénoms</th>
+            <th>👤 Participant</th>
+            <th>📅 Date</th>
+            <th>🕐 Heure</th>
+            <th>👁️ Yeux</th>
+            <th>💇 Cheveux</th>
+            <th>⚖️ Poids</th>
+            <th>📏 Taille</th>
+            <th>👨‍👩‍👦 Ressemblance</th>
+            <th>✨ Prénoms</th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody id="tableBody"></tbody>
       </table>
     </div>
   </div>
 
-  <script>
-    const raw = `Participant	date de naissance	heure naissance	couleur yeux	couleur cheveux	poids	taille	A qui bebe va ressembler le plus	prenoms
-Jacques	2026-05-18	12:12	Bleus	Noirs	6 lbs 7 oz		Maman	Jacques
-Genevieve	2026-05-09	21:00	Verts	Bruns	9 lbs	51 cm	Maman	Laurent, Benoit, Charles
-Louis	2026-05-18	00:30	Verts	Bruns	6 lbs 10 oz	52 cm	Maman	Leo, Lionnel
-Jean-Christophe	2026-05-11	11:11	Verts	Blonds	8lbs	26"	Papa	Junior
-Arielle & Victor	2026-05-18	19:50	Marrons	Bruns	7 lbs	52 cm	Papa	
-Gabriel & Kassandre	2026-05-11	05:58	Verts	Bruns	6 lbs 8 oz	53 cm	Maman	Odilon, Ermeningilde, Arsène, Roland, Charles
-Camille & Maxime	2026-05-21	15:05	Verts	Bruns	6 lbs 11 oz	52 cm	Papa	Arnaud, Jules, Théo, Elliot
-Vincent	2026-05-21	21:21	Marrons	Bruns	5 lbs 14 oz	19"	Papa	Harry
-Marie-France	2026-05-11	22:30	Marrons	Bruns	7 lbs 8 oz	60 cm	Maman	Leo
-Pierre-Luc	2026-05-16	16:17	Verts	Bruns	7 lbs 8 oz	21.5"	Maman	Ethan
-Diane	2026-05-15	02:10	Verts	Blonds	7 lbs 12 oz	20"		Loïc
-Natalie	2026-05-16	13:15	Marrons	Blonds	8 lbs 5 oz	16"		Antoine, Leo
-Simone	2026-06-03	05:00	Verts	Bruns	7 lbs 1 oz	22"	Maman	Mattéo, Anthony, Léo
-Anne	2026-05-14	15:40	Bleus	Bruns	6 lbs 10 oz	21"	Papa	Samuel, Arnaud
-Florence	2026-05-15	02:10	Verts	Bruns	6 lbs	20"	Papa	Raphaël
-Philippe	2026-05-12	11:35	Marrons	Bruns	8 lbs 5 oz	40 cm	Papa	Théophile, Philemon
-France	2026-05-13	12:00	Verts	Blonds	7 lbs	24"	Papa	David
-Donald	2026-05-05	10:15	Verts	Bruns	7 lbs 6 oz	15"	Maman	Xavier
-Gabriel Lanthier	2026-05-18	14:00	Marrons	Bruns	8 lbs	17"	Papa	Victor, Robin, Arnaud
-Maude	2026-05-18	18:18	Bleus	Bruns	5 lbs 8 oz	18"	Maman	Milan
-Maxime Lanthier	2026-05-17	11:11	Bleus	Bruns	7 lbs 2.45 oz	12"	Maman	Stryker, Polaris
-Suzane	2026-05-14	03:00	Bleus	Blonds	8 lbs 4 oz	19"	Papa	Éric
-Hélène	2026-05-11	22:04	Verts	Bruns	7 lbs 11 oz	21"	Papa	Léo`;
+  <footer>💙 Fait avec amour pour ce Papou qui arrive bientôt! 💙</footer>
+</div>
 
-    function parseTSV(text) {
-      const lines = text.trim().split('\n');
-      const headers = lines[0].split('\t');
-      return lines.slice(1).map(line => {
-        const values = line.split('\t');
-        const row = {};
-        headers.forEach((h, i) => row[h.trim()] = (values[i] || '').trim());
-        return row;
-      });
-    }
+<script>
+const data = [
+  { name: "Jacques", date: "2026-05-18", hour: "12:12", eyes: "Bleus", hair: "Noirs", weight_oz: 103, height_cm: null, resembles: "Maman", prenoms: ["Jacques"] },
+  { name: "Geneviève", date: "2026-05-09", hour: "21:00", eyes: "Verts", hair: "Bruns", weight_oz: 144, height_cm: 51, resembles: "Maman", prenoms: ["Laurent","Benoit","Charles"] },
+  { name: "Louis", date: "2026-05-18", hour: "00:30", eyes: "Verts", hair: "Bruns", weight_oz: 106, height_cm: 52, resembles: "Maman", prenoms: ["Leo","Lionnel"] },
+  { name: "Jean-Christophe", date: "2026-05-11", hour: "11:11", eyes: "Verts", hair: "Blonds", weight_oz: 128, height_cm: 66, resembles: "Papa", prenoms: ["Junior"] },
+  { name: "Arielle & Victor", date: "2026-05-18", hour: "19:50", eyes: "Marrons", hair: "Bruns", weight_oz: 112, height_cm: 52, resembles: "Papa", prenoms: [] },
+  { name: "Gabriel & Kassandre", date: "2026-05-11", hour: "05:58", eyes: "Verts", hair: "Bruns", weight_oz: 104, height_cm: 53, resembles: "Maman", prenoms: ["Odilon","Ermeningilde","Arsène","Roland","Charles"] },
+  { name: "Camille & Maxime", date: "2026-05-21", hour: "15:05", eyes: "Verts", hair: "Bruns", weight_oz: 107, height_cm: 52, resembles: "Papa", prenoms: ["Arnaud","Jules","Théo","Elliot"] },
+  { name: "Vincent", date: "2026-05-21", hour: "21:21", eyes: "Marrons", hair: "Bruns", weight_oz: 94, height_cm: 48, resembles: "Papa", prenoms: ["Harry"] },
+  { name: "Marie-France", date: "2026-05-11", hour: "22:30", eyes: "Marrons", hair: "Bruns", weight_oz: 120, height_cm: 60, resembles: "Maman", prenoms: ["Leo"] },
+  { name: "Pierre-Luc", date: "2026-05-16", hour: "16:17", eyes: "Verts", hair: "Bruns", weight_oz: 120, height_cm: 55, resembles: "Maman", prenoms: ["Ethan"] },
+  { name: "Diane", date: "2026-05-15", hour: "02:10", eyes: "Verts", hair: "Blonds", weight_oz: 124, height_cm: 51, resembles: null, prenoms: ["Loïc"] },
+  { name: "Natalie", date: "2026-05-16", hour: "13:15", eyes: "Marrons", hair: "Blonds", weight_oz: 133, height_cm: 41, resembles: "Papa", prenoms: ["Antoine","Leo"] },
+  { name: "Simone", date: "2026-06-03", hour: "05:00", eyes: "Verts", hair: "Bruns", weight_oz: 113, height_cm: 56, resembles: "Maman", prenoms: ["Mattéo","Anthony","Léo"] },
+  { name: "Anne", date: "2026-05-14", hour: "15:40", eyes: "Bleus", hair: "Bruns", weight_oz: 106, height_cm: 53, resembles: "Papa", prenoms: ["Samuel","Arnaud"] },
+  { name: "Florence", date: "2026-05-15", hour: "02:10", eyes: "Verts", hair: "Bruns", weight_oz: 96, height_cm: 51, resembles: "Papa", prenoms: ["Raphaël"] },
+  { name: "Philippe", date: "2026-05-12", hour: "11:35", eyes: "Marrons", hair: "Bruns", weight_oz: 128, height_cm: 40, resembles: "Papa", prenoms: ["Théophile","Philemon"] },
+  { name: "France", date: "2026-05-13", hour: "12:00", eyes: "Verts", hair: "Blonds", weight_oz: 112, height_cm: 61, resembles: "Papa", prenoms: ["David"] },
+  { name: "Donald", date: "2026-05-05", hour: "10:15", eyes: "Verts", hair: "Bruns", weight_oz: 118, height_cm: 38, resembles: "Maman", prenoms: ["Xavier"] },
+  { name: "Gabriel Lanthier", date: "2026-05-18", hour: "14:00", eyes: "Marrons", hair: "Bruns", weight_oz: 128, height_cm: 43, resembles: "Papa", prenoms: ["Victor","Robin","Arnaud"] },
+  { name: "Maude", date: "2026-05-18", hour: "18:18", eyes: "Bleus", hair: "Bruns", weight_oz: 88, height_cm: 46, resembles: "Maman", prenoms: ["Milan"] },
+  { name: "Maxime Lanthier", date: "2026-05-17", hour: "11:11", eyes: "Bleus", hair: "Bruns", weight_oz: 114, height_cm: 30, resembles: "Maman", prenoms: ["Stryker","Polaris"] },
+  { name: "Suzane", date: "2026-05-14", hour: "03:00", eyes: "Bleus", hair: "Blonds", weight_oz: 132, height_cm: 48, resembles: "Papa", prenoms: ["Éric"] },
+  { name: "Hélène", date: "2026-05-11", hour: "22:04", eyes: "Verts", hair: "Bruns", weight_oz: 123, height_cm: 53, resembles: "Papa", prenoms: ["Léo"] },
+  { name: "Jean-François", date: "2026-05-15", hour: "14:00", eyes: "Verts", hair: "Blonds", weight_oz: 120, height_cm: 51, resembles: "Maman", prenoms: ["Jacob"] },
+];
 
-    function parseWeight(s) {
-      if (!s) return null;
-      const m = s.match(/(\d+)\s*lbs?\s*(\d+(?:\.\d+)?)\s*oz?/i);
-      if (m) return parseInt(m[1], 10) + parseFloat(m[2]) / 16;
-      const m2 = s.match(/(\d+(?:\.\d+)?)\s*lbs?/i);
-      if (m2) return parseFloat(m2[1]);
-      return null;
-    }
+const eyeColors = { "Bleus":"#7ab3f0","Verts":"#6dcf8a","Marrons":"#c4956a" };
+const hairColors = { "Bruns":"#8B5E3C","Blonds":"#f0c060","Noirs":"#3a3050" };
+const resColors = { "Maman":"#f0a0c8","Papa":"#80b4f0" };
+const palette = ["#7ab3f0","#a8e6cf","#ffcba4","#b47ff0","#f0c060","#ff8a80","#6dd4cc","#c4956a","#aad4f0","#d4b8f0"];
 
-    function parseHeightCm(s) {
-      if (!s) return null;
-      const cm = s.match(/(\d+(?:\.\d+)?)\s*cm/i);
-      if (cm) return parseFloat(cm[1]);
-      const inch = s.match(/(\d+(?:\.\d+)?)\s*[""]/);
-      if (inch) return parseFloat(inch[1]) * 2.54;
-      return null;
-    }
+const tooltip = document.getElementById('tooltip');
+function showTip(e, html) { tooltip.style.display='block'; tooltip.innerHTML=html; moveTip(e); }
+function moveTip(e) { tooltip.style.left=(e.clientX+14)+'px'; tooltip.style.top=(e.clientY-10)+'px'; }
+function hideTip() { tooltip.style.display='none'; }
 
-    function parseTime(s) {
-      if (!s) return null;
-      const m = s.match(/(\d{1,2})[h:.](\d{2})/);
-      if (m) return parseInt(m[1], 10) + parseInt(m[2], 10) / 60;
-      return null;
-    }
+function count(arr, key) {
+  return arr.reduce((acc,d)=>{ const v=d[key]; if(v) acc[v]=(acc[v]||0)+1; return acc; },{});
+}
+function sorted(obj) { return Object.entries(obj).sort((a,b)=>b[1]-a[1]); }
 
-    const data = parseTSV(raw);
-    const colors = { Bleus: '#42a5f5', Verts: '#66bb6a', Marrons: '#8d6e63', Noirs: '#37474f' };
-    const hairColors = { Blonds: '#fdd835', Bruns: '#5d4037', Noirs: '#212121' };
+function makeBarChart(container, entries, colorFn, total) {
+  container.innerHTML='';
+  entries.forEach(([label,val])=>{
+    const pct=Math.round(val/total*100);
+    const div=document.createElement('div');
+    div.className='bar-group';
+    div.innerHTML=`<div class="bar-label"><span>${label}</span><span>${val} vote${val>1?'s':''} (${pct}%)</span></div>
+      <div class="bar-track"><div class="bar-fill" style="background:${colorFn(label)}" data-pct="${pct}"></div></div>`;
+    container.appendChild(div);
+  });
+  setTimeout(()=>container.querySelectorAll('.bar-fill').forEach(el=>el.style.width=el.dataset.pct+'%'),120);
+}
 
-    // Tabs
-    document.querySelectorAll('.tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
-      });
+// Eyes
+makeBarChart(document.getElementById('eyeChart'), sorted(count(data,'eyes')), l=>eyeColors[l]||'#aaa', data.length);
+// Hair
+makeBarChart(document.getElementById('hairChart'), sorted(count(data,'hair')), l=>hairColors[l]||'#aaa', data.length);
+
+// Donut
+(function(){
+  const counts=count(data,'resembles');
+  const entries=sorted(counts);
+  const total=entries.reduce((s,[,v])=>s+v,0);
+  let offset=0;
+  const r=38,cx=50,cy=50,circ=2*Math.PI*r;
+  const svg=document.getElementById('donutSvg');
+  svg.innerHTML='';
+  const legend=document.getElementById('donutLegend');
+  legend.innerHTML='';
+  entries.forEach(([label,val],i)=>{
+    const pct=val/total;
+    const stroke=circ*pct;
+    const gap=circ*(1-pct);
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',cx);c.setAttribute('cy',cy);c.setAttribute('r',r);
+    c.setAttribute('fill','none');
+    c.setAttribute('stroke',resColors[label]||palette[i]);
+    c.setAttribute('stroke-width','18');
+    c.setAttribute('stroke-dasharray',`${stroke} ${gap}`);
+    c.setAttribute('stroke-dashoffset',-offset*circ+circ*0.25);
+    svg.appendChild(c);
+    offset+=pct;
+    const li=document.createElement('div');
+    li.className='legend-item';
+    li.innerHTML=`<div class="legend-dot" style="background:${resColors[label]||palette[i]}"></div><span>${label||'?'} — ${val}</span>`;
+    legend.appendChild(li);
+  });
+})();
+
+// Weight scatter
+(function(){
+  const wData=data.filter(d=>d.weight_oz);
+  const min=Math.min(...wData.map(d=>d.weight_oz));
+  const max=Math.max(...wData.map(d=>d.weight_oz));
+  const avg=wData.reduce((s,d)=>s+d.weight_oz,0)/wData.length;
+  const scatter=document.getElementById('weightScatter');
+  scatter.innerHTML='';
+  function ozLbl(oz){const l=Math.floor(oz/16);const r=Math.round(oz%16);return `${l} lbs ${r} oz`;}
+  document.getElementById('wMin').textContent=ozLbl(min);
+  document.getElementById('wMax').textContent=ozLbl(max);
+  const avgPct=(avg-min)/(max-min)*100;
+  const line=document.createElement('div');
+  line.className='w-avg-line';
+  line.style.left=avgPct+'%';
+  scatter.appendChild(line);
+  const lbl=document.createElement('div');
+  lbl.className='w-label';
+  lbl.style.left=(avgPct+0.8)+'%';
+  lbl.textContent='∅ '+ozLbl(avg);
+  scatter.appendChild(lbl);
+  const rows=3;
+  wData.forEach((d,i)=>{
+    const pct=(d.weight_oz-min)/(max-min)*94+3;
+    const row=i%rows;
+    const topPct=20+row*28;
+    const dot=document.createElement('div');
+    dot.className='w-dot';
+    dot.style.left=pct+'%';
+    dot.style.top=topPct+'%';
+    dot.style.background=palette[i%palette.length];
+    dot.addEventListener('mouseover',e=>showTip(e,`<b>${d.name}</b><br>⚖️ ${ozLbl(d.weight_oz)}`));
+    dot.addEventListener('mousemove',moveTip);
+    dot.addEventListener('mouseout',hideTip);
+    scatter.appendChild(dot);
+  });
+})();
+
+// Date bar chart
+(function(){
+  const dateCounts={};
+  data.forEach(d=>{dateCounts[d.date]=(dateCounts[d.date]||0)+1;});
+  const sortedDates=Object.entries(dateCounts).sort((a,b)=>a[0].localeCompare(b[0]));
+  const container=document.getElementById('dateBarChart');
+  const maxV=Math.max(...sortedDates.map(([,v])=>v));
+  sortedDates.forEach(([date,val],i)=>{
+    const d=new Date(date+'T12:00:00');
+    const label=d.toLocaleDateString('fr-CA',{day:'numeric',month:'short',year:'numeric'});
+    const pct=Math.round(val/maxV*100);
+    const div=document.createElement('div');
+    div.className='bar-group';
+    div.innerHTML=`<div class="bar-label"><span>📅 ${label}</span><span>${val} vote${val>1?'s':''}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="background:${palette[i%palette.length]}" data-pct="${pct}"></div></div>`;
+    container.appendChild(div);
+  });
+  setTimeout(()=>container.querySelectorAll('.bar-fill').forEach(el=>el.style.width=el.dataset.pct+'%'),120);
+})();
+
+// Hour timeline
+(function(){
+  const track=document.getElementById('hourTrack');
+  const axis=document.getElementById('hourAxis');
+  [0,3,6,9,12,15,18,21,24].forEach(h=>{
+    const sp=document.createElement('span');sp.textContent=h+'h';axis.appendChild(sp);
+  });
+  const toMin=str=>{const[h,m]=str.split(':').map(Number);return h*60+m;};
+  const avgMin=data.reduce((s,d)=>s+toMin(d.hour),0)/data.length;
+  const avgPct=(avgMin/(24*60))*100;
+  const avgLine=document.createElement('div');
+  avgLine.style.cssText=`position:absolute;top:0;bottom:0;width:3px;background:#ff6b8a;border-radius:2px;left:${avgPct}%;z-index:2;`;
+  track.appendChild(avgLine);
+  data.forEach((d,i)=>{
+    const m=toMin(d.hour);
+    const pct=(m/(24*60))*100;
+    const dot=document.createElement('div');
+    dot.className='timeline-dot';
+    dot.style.left=pct+'%';
+    dot.style.background=palette[i%palette.length];
+    dot.addEventListener('mouseover',e=>showTip(e,`<b>${d.name}</b><br>⏰ ${d.hour}`));
+    dot.addEventListener('mousemove',moveTip);
+    dot.addEventListener('mouseout',hideTip);
+    track.appendChild(dot);
+  });
+})();
+
+
+
+// PRENOMS
+(function(){
+  const normName=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[éèêë]/g,'e').replace(/[àâ]/g,'a').replace(/[ùû]/g,'u');
+  const rawMap={};
+  data.forEach(d=>d.prenoms.forEach(p=>{
+    const k=normName(p);
+    if(!rawMap[k])rawMap[k]=p;
+  }));
+  const counts={};
+  data.forEach(d=>d.prenoms.forEach(p=>{
+    const k=normName(p);
+    counts[k]=(counts[k]||0)+1;
+  }));
+  const sortedNames=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const top=sortedNames.filter(([,v])=>v>1);
+
+  const container=document.getElementById('prenomBars');
+  if(top.length){
+    const maxV=top[0][1];
+    top.forEach(([k,val],i)=>{
+      const label=rawMap[k]||k;
+      const pct=Math.round(val/maxV*100);
+      const div=document.createElement('div');
+      div.className='bar-group';
+      div.innerHTML=`<div class="bar-label"><span>✨ ${label}</span><span>${val} mentions</span></div>
+        <div class="bar-track"><div class="bar-fill" style="background:${palette[i%palette.length]}" data-pct="${pct}"></div></div>`;
+      container.appendChild(div);
     });
+    setTimeout(()=>container.querySelectorAll('.bar-fill').forEach(el=>el.style.width=el.dataset.pct+'%'),120);
+  } else {
+    container.innerHTML='<p style="color:#aab">Aucun prénom répété.</p>';
+  }
 
-    function drawDonut(containerId, legendId, counts, colorMap) {
-      const total = Object.values(counts).reduce((a, b) => a + b, 0);
-      if (total === 0) return;
-      const el = document.getElementById(containerId);
-      const legend = document.getElementById(legendId);
-      el.innerHTML = '';
-      legend.innerHTML = '';
-      const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-      let acc = 0;
-      const size = 180;
-      let svg = `<svg viewBox="0 0 ${size} ${size}" width="100%" height="100%" style="max-height:180px">`;
-      entries.forEach(([label, n]) => {
-        const pct = n / total;
-        const dash = pct * 100;
-        const color = colorMap[label] || '#999';
-        svg += `<circle cx="${size/2}" cy="${size/2}" r="55" fill="none" stroke="${color}" stroke-width="28" stroke-dasharray="${dash} ${100-dash}" stroke-dashoffset="${-acc}" transform="rotate(-90 ${size/2} ${size/2})"/>`;
-        acc += dash;
-        legend.innerHTML += `<span class="legend-item"><span class="legend-dot" style="background:${color}"></span>${label}: ${n}</span>`;
-      });
-      svg += `<circle cx="${size/2}" cy="${size/2}" r="25" fill="white"/><text x="${size/2}" y="${size/2}" text-anchor="middle" dy="0.35em" font-size="14" fill="#e91e63">${total}</text></svg>`;
-      el.innerHTML = svg;
-    }
+  const bubbles=document.getElementById('allNames');
+  sortedNames.forEach(([k,val],i)=>{
+    const label=rawMap[k]||k;
+    const sp=document.createElement('span');
+    sp.className='name-bubble';
+    sp.style.background=`linear-gradient(135deg,${palette[i%palette.length]},${palette[(i+3)%palette.length]})`;
+    sp.innerHTML=`${label}<span class="cnt">${val}</span>`;
+    bubbles.appendChild(sp);
+  });
+})();
 
-    function drawBars(containerId, counts, colorMap) {
-      const total = Object.values(counts).reduce((a, b) => a + b, 0);
-      const el = document.getElementById(containerId);
-      if (!el) return;
-      el.innerHTML = '';
-      Object.entries(counts).sort((a, b) => b[1] - a[1]).forEach(([label, n]) => {
-        const pct = total ? (n / total) * 100 : 0;
-        const color = colorMap[label] || '#b0bec5';
-        const row = document.createElement('div');
-        row.className = 'bar-row';
-        row.innerHTML = `<span class="bar-label">${label}</span><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div><span>${n}</span>`;
-        el.appendChild(row);
-      });
-    }
+// TABLE
+(function(){
+  function ozLbl(oz){const l=Math.floor(oz/16);const r=Math.round(oz%16);return `${l} lbs ${r} oz`;}
+  function htLbl(cm){if(!cm)return '—';return cm+' cm';}
+  const tbody=document.getElementById('tableBody');
+  data.forEach(d=>{
+    const tr=document.createElement('tr');
+    tr.dataset.name=(d.name||'').toLowerCase();
+    const date=new Date(d.date+'T12:00:00').toLocaleDateString('fr-CA',{day:'numeric',month:'short',year:'numeric'});
+    const eyeC=eyeColors[d.eyes]||'#aaa';
+    const hairC=hairColors[d.hair]||'#aaa';
+    tr.innerHTML=`
+      <td><b>${d.name}</b></td>
+      <td>${date}</td>
+      <td>${d.hour}</td>
+      <td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${eyeC};vertical-align:middle;margin-right:4px;border:1.5px solid #ddd"></span>${d.eyes}</td>
+      <td><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${hairC};vertical-align:middle;margin-right:4px;border:1.5px solid #ddd"></span>${d.hair}</td>
+      <td>${ozLbl(d.weight_oz)}</td>
+      <td>${htLbl(d.height_cm)}</td>
+      <td>${d.resembles||'—'}</td>
+      <td style="max-width:160px;word-break:break-word">${d.prenoms.join(', ')||'—'}</td>`;
+    tbody.appendChild(tr);
+  });
+})();
 
-    // Overview stats
-    const uniqueDates = new Set(data.map(r => r['date de naissance']).filter(Boolean));
-    const allNames = data.flatMap(r => (r.prenoms || '').split(/[,&]/).map(s => s.trim()).filter(Boolean));
-    const uniqueNames = [...new Set(allNames)];
+function filterTable(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('#tableBody tr').forEach(tr=>tr.style.display=tr.dataset.name.includes(q)?'':'none');
+}
 
-    document.getElementById('stat-count').textContent = data.length;
-    document.getElementById('stat-dates').textContent = uniqueDates.size;
-    document.getElementById('stat-prenoms').textContent = uniqueNames.length;
-
-    // Date counts for overview
-    const dateCounts = {};
-    data.forEach(r => {
-      const d = r['date de naissance'];
-      if (d) dateCounts[d] = (dateCounts[d] || 0) + 1;
-    });
-    const sortedDates = Object.entries(dateCounts).sort((a, b) => a[0].localeCompare(b[0]));
-    const overviewDatesEl = document.getElementById('overview-dates');
-    sortedDates.forEach(([date, count]) => {
-      const cell = document.createElement('div');
-      cell.className = 'date-cell has-pred';
-      const [, mo, day] = date.split('-');
-      cell.innerHTML = `<span class="count">${count}</span><br>${day}/${mo}`;
-      overviewDatesEl.appendChild(cell);
-    });
-
-    const eyeCounts = {};
-    const hairCounts = {};
-    data.forEach(r => {
-      const e = r['couleur yeux'];
-      const h = r['couleur cheveux'];
-      if (e) eyeCounts[e] = (eyeCounts[e] || 0) + 1;
-      if (h) hairCounts[h] = (hairCounts[h] || 0) + 1;
-    });
-    drawDonut('overview-eyes', 'legend-eyes', eyeCounts, colors);
-    drawDonut('overview-hair', 'legend-hair', hairCounts, hairColors);
-
-    // Panel Dates: all dates + time histogram
-    const datesChartEl = document.getElementById('dates-chart');
-    const allDays = ['2026-05-05','2026-05-09','2026-05-11','2026-05-12','2026-05-13','2026-05-14','2026-05-15','2026-05-16','2026-05-17','2026-05-18','2026-05-21','2026-06-03'];
-    allDays.forEach(d => {
-      const cell = document.createElement('div');
-      cell.className = 'date-cell' + (dateCounts[d] ? ' has-pred' : '');
-      const [, mo, day] = d.split('-');
-      cell.innerHTML = `<span class="count">${dateCounts[d] || 0}</span><br>${day}/${mo}`;
-      datesChartEl.appendChild(cell);
-    });
-
-    const timeBuckets = {};
-    for (let i = 0; i < 24; i++) timeBuckets[i + 'h'] = 0;
-    data.forEach(r => {
-      const h = parseTime(r['heure naissance']);
-      if (h != null) timeBuckets[Math.floor(h) + 'h']++;
-    });
-    const timeColors = Object.fromEntries([...Array(24)].map((_, i) => [i + 'h', '#81d4fa']));
-    drawBars('times-chart', timeBuckets, timeColors);
-    const legendTimes = document.getElementById('legend-times');
-    legendTimes.innerHTML = '<span class="legend-item">Répartition par heure de la journée (0h–23h)</span>';
-
-    // Panel Looks: weight & height
-    const weightValues = data.map(r => parseWeight(r.poids)).filter(x => x != null);
-    const weightCounts = {};
-    weightValues.forEach(w => {
-      const bucket = (Math.round(w * 2) / 2).toFixed(1);
-      weightCounts[bucket + ' lbs'] = (weightCounts[bucket + ' lbs'] || 0) + 1;
-    });
-    drawBars('weight-bars', weightCounts, { '5.5 lbs': '#ffccbc', '6 lbs': '#c5e1a5', '6.5 lbs': '#a5d6a7', '7 lbs': '#81c784', '7.5 lbs': '#66bb6a', '8 lbs': '#4caf50', '8.5 lbs': '#43a047', '9 lbs': '#2e7d32' });
-
-    const heightValues = data.map(r => parseHeightCm(r.taille)).filter(x => x != null);
-    const heightCounts = {};
-    heightValues.forEach(h => {
-      const bucket = Math.round(h / 5) * 5;
-      const key = bucket + ' cm';
-      heightCounts[key] = (heightCounts[key] || 0) + 1;
-    });
-    drawBars('height-bars', heightCounts, Object.fromEntries(Object.keys(heightCounts).map((k, i) => [k, ['#b3e5fc','#81d4fa','#4fc3f7','#29b6f6'][i % 4]])));
-
-    drawBars('eyes-bars', eyeCounts, colors);
-    document.getElementById('legend-eyes2').innerHTML = document.getElementById('legend-eyes').innerHTML;
-    drawBars('hair-bars', hairCounts, hairColors);
-    document.getElementById('legend-hair2').innerHTML = document.getElementById('legend-hair').innerHTML;
-
-    // Resemble
-    const resembleCounts = { Maman: 0, Papa: 0 };
-    data.forEach(r => {
-      const v = (r['A qui bebe va ressembler le plus'] || '').trim();
-      if (v === 'Maman' || v === 'Papa') resembleCounts[v]++;
-    });
-    const resembleEl = document.getElementById('resemble-chart');
-    resembleEl.innerHTML = '';
-    ['Maman', 'Papa'].forEach(who => {
-      const total = resembleCounts.Maman + resembleCounts.Papa;
-      const pct = total ? (resembleCounts[who] / total) * 100 : 0;
-      const row = document.createElement('div');
-      row.className = 'bar-row';
-      row.innerHTML = `<span class="bar-label">${who}</span><div class="bar-track"><div class="bar-fill ${who === 'Papa' ? 'papa' : 'maman'}" style="width:${pct}%"></div></div><span>${resembleCounts[who]}</span>`;
-      resembleEl.appendChild(row);
-    });
-    document.getElementById('legend-resemble').innerHTML = `<span class="legend-item"><span class="legend-dot maman" style="background:#ec407a"></span>Maman: ${resembleCounts.Maman}</span><span class="legend-item"><span class="legend-dot papa" style="background:#42a5f5"></span>Papa: ${resembleCounts.Papa}</span>`;
-
-    // Prénoms cloud
-    const nameCounts = {};
-    allNames.forEach(n => { nameCounts[n] = (nameCounts[n] || 0) + 1; });
-    const cloudEl = document.getElementById('prenoms-cloud');
-    Object.entries(nameCounts).sort((a, b) => b[1] - a[1]).forEach(([name, count]) => {
-      const tag = document.createElement('span');
-      tag.className = 'name-tag';
-      tag.textContent = count > 1 ? `${name} (×${count})` : name;
-      cloudEl.appendChild(tag);
-    });
-
-    // Table
-    const tbody = document.getElementById('data-table').querySelector('tbody');
-    function renderTable(filter = '') {
-      const q = filter.toLowerCase();
-      const rows = data.filter(r => !q || Object.values(r).some(v => String(v).toLowerCase().includes(q)));
-      tbody.innerHTML = rows.map(r => `
-        <tr>
-          <td>${r.Participant}</td>
-          <td>${r['date de naissance']}</td>
-          <td>${r['heure naissance']}</td>
-          <td>${r['couleur yeux']}</td>
-          <td>${r['couleur cheveux']}</td>
-          <td>${r.poids}</td>
-          <td>${r.taille}</td>
-          <td>${r['A qui bebe va ressembler le plus']}</td>
-          <td>${r.prenoms}</td>
-        </tr>
-      `).join('');
-    }
-    renderTable();
-    document.getElementById('table-search').addEventListener('input', e => renderTable(e.target.value));
-  </script>
+function showTab(id, btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  setTimeout(()=>document.querySelectorAll('.bar-fill').forEach(el=>{
+    const t=el.dataset.pct;el.style.width='0%';setTimeout(()=>el.style.width=t+'%',50);
+  }),60);
+}
+</script>
 </body>
 </html>
