@@ -634,20 +634,6 @@
       <!-- Stat fun cards row -->
       <div class="charts-grid" style="margin-bottom:22px;">
 
-        <!-- Indice de confiance -->
-        <div class="chart-card">
-          <h3>🎯 Indice de Consensus</h3>
-          <div id="consensusChart"></div>
-          <p style="font-size:0.78rem;color:#aab;font-weight:600;margin-top:10px;">Plus la barre est longue, plus les participants sont d'accord entre eux.</p>
-        </div>
-
-        <!-- Corrélation poids/taille -->
-        <div class="chart-card">
-          <h3>📐 Corrélation Poids ↔ Taille</h3>
-          <div id="correlationViz"></div>
-          <p id="correlationLabel" style="font-size:0.82rem;color:#7b8ed0;font-weight:700;margin-top:10px;text-align:center;"></p>
-        </div>
-
         <!-- Corrélation yeux/cheveux -->
         <div class="chart-card">
           <h3>👁️✂️ Yeux × Cheveux</h3>
@@ -1030,101 +1016,7 @@ makeBarChart(document.getElementById('hairChart'), sorted(count(data,'hair')), l
 // STATISTIQUES AVANCÉES
 // =====================
 
-// --- 1. Indice de Consensus ---
-(function(){
-  function entropy(arr) {
-    const total = arr.length;
-    const counts = {};
-    arr.forEach(v => counts[v] = (counts[v]||0)+1);
-    const vals = Object.values(counts);
-    // consensus = most popular / total → 100% = tout le monde pareil
-    const max = Math.max(...vals);
-    return Math.round(max/total*100);
-  }
-  const metrics = [
-    { label: '👁️ Yeux', val: entropy(data.map(d=>d.eyes)), color: '#7ab3f0' },
-    { label: '💇 Cheveux', val: entropy(data.map(d=>d.hair)), color: '#8B5E3C' },
-    { label: '👨‍👩‍👦 Ressemblance', val: entropy(data.filter(d=>d.resembles).map(d=>d.resembles)), color: '#f0a0c8' },
-  ];
-  const container = document.getElementById('consensusChart');
-  metrics.forEach(m => {
-    const div = document.createElement('div');
-    div.className = 'bar-group';
-    div.innerHTML = `<div class="bar-label"><span>${m.label}</span><span>${m.val}% d'accord</span></div>
-      <div class="bar-track"><div class="bar-fill" style="background:${m.color}" data-pct="${m.val}"></div></div>`;
-    container.appendChild(div);
-  });
-  setTimeout(()=>container.querySelectorAll('.bar-fill').forEach(el=>el.style.width=el.dataset.pct+'%'),200);
-})();
-
-// --- 2. Corrélation Poids ↔ Taille ---
-(function(){
-  const paired = data.filter(d=>d.weight_oz && d.height_cm);
-  const n = paired.length;
-  const xs = paired.map(d=>d.weight_oz);
-  const ys = paired.map(d=>d.height_cm);
-  const meanX = xs.reduce((a,b)=>a+b,0)/n;
-  const meanY = ys.reduce((a,b)=>a+b,0)/n;
-  const num = xs.reduce((s,x,i)=>s+(x-meanX)*(ys[i]-meanY),0);
-  const den = Math.sqrt(xs.reduce((s,x)=>s+(x-meanX)**2,0)*ys.reduce((s,y)=>s+(y-meanY)**2,0));
-  const r = den===0 ? 0 : num/den;
-
-  const minX=Math.min(...xs), maxX=Math.max(...xs);
-  const minY=Math.min(...ys), maxY=Math.max(...ys);
-
-  const wrap = document.getElementById('correlationViz');
-  wrap.style.cssText='position:relative;height:160px;background:linear-gradient(135deg,#e8f4ff,#f0e8ff);border-radius:14px;';
-
-  // axis labels
-  const axX = document.createElement('div');
-  axX.className='corr-axis-label';
-  axX.style.cssText='position:absolute;bottom:4px;right:8px;';
-  axX.textContent='→ poids';
-  wrap.appendChild(axX);
-  const axY = document.createElement('div');
-  axY.className='corr-axis-label';
-  axY.style.cssText='position:absolute;top:4px;left:6px;writing-mode:vertical-lr;transform:rotate(180deg);';
-  axY.textContent='taille ↑';
-  wrap.appendChild(axY);
-
-  // trend line
-  const slope = num / xs.reduce((s,x)=>s+(x-meanX)**2,0);
-  const intercept = meanY - slope*meanX;
-  const x1pct=5, x2pct=95;
-  const x1val=minX+(maxX-minX)*x1pct/100, x2val=minX+(maxX-minX)*x2pct/100;
-  const y1val=slope*x1val+intercept, y2val=slope*x2val+intercept;
-  const y1pct=100-((y1val-minY)/(maxY-minY)*90+5);
-  const y2pct=100-((y2val-minY)/(maxY-minY)*90+5);
-  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.setAttribute('width','100%');svg.setAttribute('height','100%');
-  svg.style.cssText='position:absolute;inset:0;pointer-events:none;';
-  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
-  line.setAttribute('x1',x1pct+'%');line.setAttribute('y1',y1pct+'%');
-  line.setAttribute('x2',x2pct+'%');line.setAttribute('y2',y2pct+'%');
-  line.setAttribute('stroke','rgba(120,100,220,0.35)');line.setAttribute('stroke-width','2');line.setAttribute('stroke-dasharray','5,4');
-  svg.appendChild(line);wrap.appendChild(svg);
-
-  paired.forEach((d,i)=>{
-    const px=((d.weight_oz-minX)/(maxX-minX)*90+5);
-    const py=100-((d.height_cm-minY)/(maxY-minY)*90+5);
-    const dot=document.createElement('div');
-    dot.className='corr-dot';
-    dot.style.left=px+'%';dot.style.top=py+'%';
-    dot.style.background=palette[i%palette.length];
-    dot.addEventListener('mouseover',e=>showTip(e,`<b>${d.name}</b><br>⚖️ ${Math.floor(d.weight_oz/16)}lbs ${Math.round(d.weight_oz%16)}oz<br>📏 ${d.height_cm} cm`));
-    dot.addEventListener('mousemove',moveTip);
-    dot.addEventListener('mouseout',hideTip);
-    wrap.appendChild(dot);
-  });
-
-  const rPct=Math.round(Math.abs(r)*100);
-  const rSign=r>=0?'positive':'négative';
-  const rStrength=Math.abs(r)>0.6?'forte':Math.abs(r)>0.3?'modérée':'faible';
-  document.getElementById('correlationLabel').textContent=
-    `r = ${r.toFixed(2)} · Corrélation ${rSign} ${rStrength} (${n} votes avec les deux valeurs)`;
-})();
-
-// --- 3. Matrice Yeux × Cheveux ---
+// --- 2. Matrice Yeux × Cheveux ---
 (function(){
   const eyeOrder = ['Verts','Bleus','Marrons'];
   const hairOrder = ['Bruns','Blonds','Noirs'];
@@ -1264,7 +1156,7 @@ makeBarChart(document.getElementById('hairChart'), sorted(count(data,'hair')), l
     {emoji:'🌅',label:'Naissance la plus matinale',value:earliest.hour,sub:`par ${earliest.name}`,c1:'#f0c060',c2:'#ff8a80'},
     {emoji:'🌌',label:'Naissance la plus tardive',value:latest.hour,sub:`par ${latest.name}`,c1:'#6b5fad',c2:'#b47ff0'},
     {emoji:'✨',label:'Le plus de prénoms proposés',value:mostPrenoms.prenoms.length+' prénoms',sub:`${mostPrenoms.name} : ${mostPrenoms.prenoms.join(', ')}`,c1:'#7ab3f0',c2:'#a8e6cf'},
-    {emoji:'📅',label:'Dates uniques proposées',value:diffDates+' dates',sub:`sur 24 participants`,c1:'#ffcba4',c2:'#f0c060'},
+
     {emoji:'↔️',label:'Écart de poids entre votes',value:ozLbl(weightRange),sub:`entre le min et le max!`,c1:'#ff8a80',c2:'#b47ff0'},
   ];
 
