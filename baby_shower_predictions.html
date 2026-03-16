@@ -447,10 +447,76 @@
     font-weight: 700;
   }
 
-  @media (max-width: 600px) {
-    .pred-grid { grid-template-columns: 1fr 1fr; }
-    .charts-grid { grid-template-columns: 1fr; }
+  .fun-fact-card {
+    background: linear-gradient(135deg, var(--c1), var(--c2));
+    border-radius: 18px;
+    padding: 16px 18px;
+    color: white;
+    position: relative;
+    overflow: hidden;
   }
+  .fun-fact-card::before {
+    content: attr(data-emoji);
+    position: absolute;
+    right: 12px; top: 8px;
+    font-size: 36px;
+    opacity: 0.22;
+  }
+  .fun-fact-card .ff-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    opacity: 0.82;
+    margin-bottom: 4px;
+  }
+  .fun-fact-card .ff-value {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.3rem;
+    line-height: 1.2;
+  }
+  .fun-fact-card .ff-sub {
+    font-size: 0.76rem;
+    opacity: 0.82;
+    font-weight: 600;
+    margin-top: 3px;
+  }
+
+  .orig-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 7px 0;
+    font-size: 0.88rem;
+    font-weight: 700;
+  }
+  .orig-medal { font-size: 1.2rem; width: 28px; text-align: center; flex-shrink: 0; }
+  .orig-name { width: 150px; flex-shrink: 0; color: var(--text); }
+  .orig-bar-wrap { flex: 1; background: #e8eeff; border-radius: 20px; height: 16px; overflow: hidden; }
+  .orig-bar { height: 100%; border-radius: 20px; transition: width 1s cubic-bezier(.4,0,.2,1); }
+  .orig-score { width: 40px; text-align: right; color: #aab; font-size: 0.8rem; flex-shrink: 0; }
+
+  .corr-canvas-wrap { position: relative; width: 100%; height: 160px; }
+  .corr-dot {
+    position: absolute;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    border: 2px solid white;
+    transition: transform 0.15s;
+  }
+  .corr-dot:hover { transform: translate(-50%,-50%) scale(1.7); z-index: 5; }
+  .corr-axis-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #aab;
+  }
+
+  @media (max-width: 600px) {
+    .orig-name { width: 100px; }
+  }
+
 </style>
 </head>
 <body>
@@ -559,6 +625,58 @@
           <span id="hMin"></span><span style="color:#aab">← taille →</span><span id="hMax"></span>
         </div>
       </div>
+    </div>
+
+    <!-- ADVANCED STATS -->
+    <div style="margin-top:10px;">
+      <div class="section-title">🧪 Statistiques Avancées</div>
+
+      <!-- Stat fun cards row -->
+      <div class="charts-grid" style="margin-bottom:22px;">
+
+        <!-- Indice de confiance -->
+        <div class="chart-card">
+          <h3>🎯 Indice de Consensus</h3>
+          <div id="consensusChart"></div>
+          <p style="font-size:0.78rem;color:#aab;font-weight:600;margin-top:10px;">Plus la barre est longue, plus les participants sont d'accord entre eux.</p>
+        </div>
+
+        <!-- Corrélation poids/taille -->
+        <div class="chart-card">
+          <h3>📐 Corrélation Poids ↔ Taille</h3>
+          <div id="correlationViz"></div>
+          <p id="correlationLabel" style="font-size:0.82rem;color:#7b8ed0;font-weight:700;margin-top:10px;text-align:center;"></p>
+        </div>
+
+        <!-- Corrélation yeux/cheveux -->
+        <div class="chart-card">
+          <h3>👁️✂️ Yeux × Cheveux</h3>
+          <p style="font-size:0.8rem;color:#aab;font-weight:600;margin-bottom:12px;">Quelles combinaisons les participants imaginent-ils le plus?</p>
+          <div id="eyeHairMatrix"></div>
+        </div>
+
+        <!-- Noctambules vs lève-tôt -->
+        <div class="chart-card">
+          <h3>🌙 Noctambules vs Lève-tôt</h3>
+          <p style="font-size:0.8rem;color:#aab;font-weight:600;margin-bottom:10px;">À quelle heure pensent-ils que bébé arrivera?</p>
+          <div id="nightOwlChart"></div>
+        </div>
+
+      </div>
+
+      <!-- Full-width: Classement des participants les plus "originaux" -->
+      <div class="chart-card" style="margin-bottom:22px;">
+        <h3>🏆 Classement des Prédictions les Plus Originales</h3>
+        <p style="font-size:0.8rem;color:#aab;font-weight:600;margin-bottom:14px;">Score d'originalité = à quel point chaque vote s'éloigne de la moyenne du groupe (poids, taille, heure).</p>
+        <div id="originalityRank"></div>
+      </div>
+
+      <!-- Fun facts -->
+      <div class="chart-card" style="margin-bottom:22px;">
+        <h3>💡 Fun Facts</h3>
+        <div id="funFacts" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:6px;"></div>
+      </div>
+
     </div>
   </div>
 
@@ -906,6 +1024,262 @@ makeBarChart(document.getElementById('hairChart'), sorted(count(data,'hair')), l
     tbody.appendChild(tr);
   });
 })();
+
+
+// =====================
+// STATISTIQUES AVANCÉES
+// =====================
+
+// --- 1. Indice de Consensus ---
+(function(){
+  function entropy(arr) {
+    const total = arr.length;
+    const counts = {};
+    arr.forEach(v => counts[v] = (counts[v]||0)+1);
+    const vals = Object.values(counts);
+    // consensus = most popular / total → 100% = tout le monde pareil
+    const max = Math.max(...vals);
+    return Math.round(max/total*100);
+  }
+  const metrics = [
+    { label: '👁️ Yeux', val: entropy(data.map(d=>d.eyes)), color: '#7ab3f0' },
+    { label: '💇 Cheveux', val: entropy(data.map(d=>d.hair)), color: '#8B5E3C' },
+    { label: '👨‍👩‍👦 Ressemblance', val: entropy(data.filter(d=>d.resembles).map(d=>d.resembles)), color: '#f0a0c8' },
+  ];
+  const container = document.getElementById('consensusChart');
+  metrics.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'bar-group';
+    div.innerHTML = `<div class="bar-label"><span>${m.label}</span><span>${m.val}% d'accord</span></div>
+      <div class="bar-track"><div class="bar-fill" style="background:${m.color}" data-pct="${m.val}"></div></div>`;
+    container.appendChild(div);
+  });
+  setTimeout(()=>container.querySelectorAll('.bar-fill').forEach(el=>el.style.width=el.dataset.pct+'%'),200);
+})();
+
+// --- 2. Corrélation Poids ↔ Taille ---
+(function(){
+  const paired = data.filter(d=>d.weight_oz && d.height_cm);
+  const n = paired.length;
+  const xs = paired.map(d=>d.weight_oz);
+  const ys = paired.map(d=>d.height_cm);
+  const meanX = xs.reduce((a,b)=>a+b,0)/n;
+  const meanY = ys.reduce((a,b)=>a+b,0)/n;
+  const num = xs.reduce((s,x,i)=>s+(x-meanX)*(ys[i]-meanY),0);
+  const den = Math.sqrt(xs.reduce((s,x)=>s+(x-meanX)**2,0)*ys.reduce((s,y)=>s+(y-meanY)**2,0));
+  const r = den===0 ? 0 : num/den;
+
+  const minX=Math.min(...xs), maxX=Math.max(...xs);
+  const minY=Math.min(...ys), maxY=Math.max(...ys);
+
+  const wrap = document.getElementById('correlationViz');
+  wrap.style.cssText='position:relative;height:160px;background:linear-gradient(135deg,#e8f4ff,#f0e8ff);border-radius:14px;';
+
+  // axis labels
+  const axX = document.createElement('div');
+  axX.className='corr-axis-label';
+  axX.style.cssText='position:absolute;bottom:4px;right:8px;';
+  axX.textContent='→ poids';
+  wrap.appendChild(axX);
+  const axY = document.createElement('div');
+  axY.className='corr-axis-label';
+  axY.style.cssText='position:absolute;top:4px;left:6px;writing-mode:vertical-lr;transform:rotate(180deg);';
+  axY.textContent='taille ↑';
+  wrap.appendChild(axY);
+
+  // trend line
+  const slope = num / xs.reduce((s,x)=>s+(x-meanX)**2,0);
+  const intercept = meanY - slope*meanX;
+  const x1pct=5, x2pct=95;
+  const x1val=minX+(maxX-minX)*x1pct/100, x2val=minX+(maxX-minX)*x2pct/100;
+  const y1val=slope*x1val+intercept, y2val=slope*x2val+intercept;
+  const y1pct=100-((y1val-minY)/(maxY-minY)*90+5);
+  const y2pct=100-((y2val-minY)/(maxY-minY)*90+5);
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('width','100%');svg.setAttribute('height','100%');
+  svg.style.cssText='position:absolute;inset:0;pointer-events:none;';
+  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1',x1pct+'%');line.setAttribute('y1',y1pct+'%');
+  line.setAttribute('x2',x2pct+'%');line.setAttribute('y2',y2pct+'%');
+  line.setAttribute('stroke','rgba(120,100,220,0.35)');line.setAttribute('stroke-width','2');line.setAttribute('stroke-dasharray','5,4');
+  svg.appendChild(line);wrap.appendChild(svg);
+
+  paired.forEach((d,i)=>{
+    const px=((d.weight_oz-minX)/(maxX-minX)*90+5);
+    const py=100-((d.height_cm-minY)/(maxY-minY)*90+5);
+    const dot=document.createElement('div');
+    dot.className='corr-dot';
+    dot.style.left=px+'%';dot.style.top=py+'%';
+    dot.style.background=palette[i%palette.length];
+    dot.addEventListener('mouseover',e=>showTip(e,`<b>${d.name}</b><br>⚖️ ${Math.floor(d.weight_oz/16)}lbs ${Math.round(d.weight_oz%16)}oz<br>📏 ${d.height_cm} cm`));
+    dot.addEventListener('mousemove',moveTip);
+    dot.addEventListener('mouseout',hideTip);
+    wrap.appendChild(dot);
+  });
+
+  const rPct=Math.round(Math.abs(r)*100);
+  const rSign=r>=0?'positive':'négative';
+  const rStrength=Math.abs(r)>0.6?'forte':Math.abs(r)>0.3?'modérée':'faible';
+  document.getElementById('correlationLabel').textContent=
+    `r = ${r.toFixed(2)} · Corrélation ${rSign} ${rStrength} (${n} votes avec les deux valeurs)`;
+})();
+
+// --- 3. Matrice Yeux × Cheveux ---
+(function(){
+  const eyeOrder = ['Verts','Bleus','Marrons'];
+  const hairOrder = ['Bruns','Blonds','Noirs'];
+  const matrix = {};
+  eyeOrder.forEach(e => { matrix[e]={}; hairOrder.forEach(h => matrix[e][h]=0); });
+  data.forEach(d => { if(matrix[d.eyes]) matrix[d.eyes][d.hair] = (matrix[d.eyes][d.hair]||0)+1; });
+  const maxVal = Math.max(...eyeOrder.flatMap(e => hairOrder.map(h => matrix[e][h])));
+
+  const container = document.getElementById('eyeHairMatrix');
+  container.style.cssText = 'display:grid;grid-template-columns:auto repeat(3,1fr);gap:6px;align-items:center;font-size:0.8rem;font-weight:700;';
+
+  // Header row
+  const empty = document.createElement('div');
+  container.appendChild(empty);
+  hairOrder.forEach(h => {
+    const hd = document.createElement('div');
+    hd.style.cssText = 'text-align:center;color:#aab;font-size:0.72rem;padding-bottom:2px;';
+    hd.innerHTML = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${hairColors[h]};margin-right:3px;vertical-align:middle;border:1px solid #ddd"></span>${h}`;
+    container.appendChild(hd);
+  });
+
+  eyeOrder.forEach(e => {
+    const rowLabel = document.createElement('div');
+    rowLabel.style.cssText = 'color:#888;font-size:0.72rem;white-space:nowrap;';
+    rowLabel.innerHTML = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${eyeColors[e]};margin-right:3px;vertical-align:middle;border:1px solid #ddd"></span>${e}`;
+    container.appendChild(rowLabel);
+
+    hairOrder.forEach(h => {
+      const val = matrix[e][h];
+      const intensity = maxVal > 0 ? val/maxVal : 0;
+      const cell = document.createElement('div');
+      cell.style.cssText = `
+        text-align:center;border-radius:10px;padding:8px 4px;
+        background:${val===0?'#f0f4ff':`rgba(${e==='Verts'?'80,190,120':e==='Bleus'?'100,160,240':'180,130,90'},${0.15+intensity*0.75})`};
+        color:${intensity>0.5?'white':'#3a3a5c'};
+        font-family:'Fredoka One',cursive;font-size:${val>0?'1.1rem':'0.8rem'};
+        transition:transform 0.15s;cursor:default;
+      `;
+      cell.textContent = val > 0 ? val : '·';
+      cell.title = `${e} + ${h} : ${val} vote${val>1?'s':''}`;
+      cell.addEventListener('mouseover', e2 => showTip(e2, `<b>${e} + ${h}</b><br>${val} vote${val>1?'s':''}`));
+      cell.addEventListener('mousemove', moveTip);
+      cell.addEventListener('mouseout', hideTip);
+      container.appendChild(cell);
+    });
+  });
+
+  // Légende du combo gagnant
+  let best = {e:'',h:'',v:0};
+  eyeOrder.forEach(e => hairOrder.forEach(h => { if(matrix[e][h]>best.v) best={e,h,v:matrix[e][h]}; }));
+  const note = document.createElement('p');
+  note.style.cssText = 'font-size:0.75rem;color:#7b8ed0;font-weight:700;margin-top:10px;grid-column:1/-1;';
+  note.textContent = `🏆 Combo gagnant : ${best.e} + ${best.h} avec ${best.v} votes!`;
+  container.appendChild(note);
+})();
+
+// --- 4. Noctambules vs Lève-tôt ---
+(function(){
+  const toMin=str=>{const[h,m]=str.split(':').map(Number);return h*60+m;};
+  const slots=[
+    {label:'🌙 Nuit (0h–6h)', min:0,max:360,color:'#6b5fad'},
+    {label:'☀️ Matin (6h–12h)', min:360,max:720,color:'#f0c060'},
+    {label:'🌤 Après-midi (12h–18h)', min:720,max:1080,color:'#7ab3f0'},
+    {label:'🌆 Soir (18h–24h)', min:1080,max:1440,color:'#ff8a80'},
+  ];
+  const container=document.getElementById('nightOwlChart');
+  const maxV=Math.max(...slots.map(s=>data.filter(d=>{const m=toMin(d.hour);return m>=s.min&&m<s.max;}).length));
+  slots.forEach(s=>{
+    const matches=data.filter(d=>{const m=toMin(d.hour);return m>=s.min&&m<s.max;});
+    const pct=Math.round(matches.length/data.length*100);
+    const div=document.createElement('div');
+    div.className='bar-group';
+    div.innerHTML=`<div class="bar-label"><span>${s.label}</span><span>${matches.length} votes (${pct}%)</span></div>
+      <div class="bar-track"><div class="bar-fill" style="background:${s.color}" data-pct="${maxV>0?Math.round(matches.length/maxV*100):0}"></div></div>`;
+    container.appendChild(div);
+  });
+  setTimeout(()=>container.querySelectorAll('.bar-fill').forEach(el=>el.style.width=el.dataset.pct+'%'),200);
+})();
+
+// --- 5. Classement des Prédictions Originales ---
+(function(){
+  const toMin=str=>{const[h,m]=str.split(':').map(Number);return h*60+m;};
+  const avgW=data.reduce((s,d)=>s+d.weight_oz,0)/data.length;
+  const hData=data.filter(d=>d.height_cm);
+  const avgH=hData.reduce((s,d)=>s+d.height_cm,0)/hData.length;
+  const avgMin=data.reduce((s,d)=>s+toMin(d.hour),0)/data.length;
+  const stdW=Math.sqrt(data.reduce((s,d)=>s+(d.weight_oz-avgW)**2,0)/data.length);
+  const stdH=Math.sqrt(hData.reduce((s,d)=>s+(d.height_cm-avgH)**2,0)/hData.length);
+  const stdMin=Math.sqrt(data.reduce((s,d)=>s+(toMin(d.hour)-avgMin)**2,0)/data.length);
+
+  const scored=data.map(d=>{
+    let score=0, parts=0;
+    score+=Math.abs(d.weight_oz-avgW)/stdW; parts++;
+    if(d.height_cm){score+=Math.abs(d.height_cm-avgH)/stdH; parts++;}
+    score+=Math.abs(toMin(d.hour)-avgMin)/stdMin; parts++;
+    return {name:d.name, score:score/parts};
+  }).sort((a,b)=>b.score-a.score);
+
+  const medals=['🥇','🥈','🥉'];
+  const container=document.getElementById('originalityRank');
+  const maxS=scored[0].score;
+  scored.forEach((d,i)=>{
+    const row=document.createElement('div');
+    row.className='orig-row';
+    const barColor=palette[i%palette.length];
+    row.innerHTML=`
+      <span class="orig-medal">${i<3?medals[i]:'#'+(i+1)}</span>
+      <span class="orig-name">${d.name}</span>
+      <div class="orig-bar-wrap"><div class="orig-bar" style="background:${barColor};width:0%" data-pct="${Math.round(d.score/maxS*100)}"></div></div>
+      <span class="orig-score">${d.score.toFixed(2)}σ</span>`;
+    container.appendChild(row);
+  });
+  setTimeout(()=>container.querySelectorAll('.orig-bar').forEach(el=>el.style.width=el.dataset.pct+'%'),200);
+})();
+
+// --- 6. Fun Facts ---
+(function(){
+  function ozLbl(oz){const l=Math.floor(oz/16);const r=Math.round(oz%16);return `${l} lbs ${r} oz`;}
+  const toMin=str=>{const[h,m]=str.split(':').map(Number);return h*60+m;};
+
+  const heaviest=data.reduce((a,b)=>b.weight_oz>a.weight_oz?b:a);
+  const lightest=data.reduce((a,b)=>b.weight_oz<a.weight_oz?b:a);
+  const hData=data.filter(d=>d.height_cm);
+  const tallest=hData.reduce((a,b)=>b.height_cm>a.height_cm?b:a);
+  const shortest=hData.reduce((a,b)=>b.height_cm<a.height_cm?b:a);
+  const earliest=data.reduce((a,b)=>toMin(b.hour)<toMin(a.hour)?b:a);
+  const latest=data.reduce((a,b)=>toMin(b.hour)>toMin(a.hour)?b:a);
+  const mostPrenoms=data.reduce((a,b)=>b.prenoms.length>a.prenoms.length?b:a);
+  const diffDates=new Set(data.map(d=>d.date)).size;
+  const weightRange=Math.max(...data.map(d=>d.weight_oz))-Math.min(...data.map(d=>d.weight_oz));
+
+  const facts=[
+    {emoji:'🏋️',label:'Poids le plus élevé prédit',value:ozLbl(heaviest.weight_oz),sub:`par ${heaviest.name}`,c1:'#ff8a80',c2:'#ffcba4'},
+    {emoji:'🪶',label:'Poids le plus bas prédit',value:ozLbl(lightest.weight_oz),sub:`par ${lightest.name}`,c1:'#a8e6cf',c2:'#7ab3f0'},
+    {emoji:'📏',label:'Bébé le plus grand imaginé',value:tallest.height_cm+' cm',sub:`par ${tallest.name}`,c1:'#b47ff0',c2:'#7ab3f0'},
+    {emoji:'🐭',label:'Bébé le plus petit imaginé',value:shortest.height_cm+' cm',sub:`par ${shortest.name}`,c1:'#f0c060',c2:'#ffcba4'},
+    {emoji:'🌅',label:'Naissance la plus matinale',value:earliest.hour,sub:`par ${earliest.name}`,c1:'#f0c060',c2:'#ff8a80'},
+    {emoji:'🌌',label:'Naissance la plus tardive',value:latest.hour,sub:`par ${latest.name}`,c1:'#6b5fad',c2:'#b47ff0'},
+    {emoji:'✨',label:'Le plus de prénoms proposés',value:mostPrenoms.prenoms.length+' prénoms',sub:`${mostPrenoms.name} : ${mostPrenoms.prenoms.join(', ')}`,c1:'#7ab3f0',c2:'#a8e6cf'},
+    {emoji:'📅',label:'Dates uniques proposées',value:diffDates+' dates',sub:`sur 24 participants`,c1:'#ffcba4',c2:'#f0c060'},
+    {emoji:'↔️',label:'Écart de poids entre votes',value:ozLbl(weightRange),sub:`entre le min et le max!`,c1:'#ff8a80',c2:'#b47ff0'},
+  ];
+
+  const container=document.getElementById('funFacts');
+  facts.forEach(f=>{
+    const card=document.createElement('div');
+    card.className='fun-fact-card';
+    card.setAttribute('data-emoji',f.emoji);
+    card.style.setProperty('--c1',f.c1);
+    card.style.setProperty('--c2',f.c2);
+    card.innerHTML=`<div class="ff-label">${f.label}</div><div class="ff-value">${f.value}</div><div class="ff-sub">${f.sub}</div>`;
+    container.appendChild(card);
+  });
+})();
+
 
 function filterTable(){
   const q=document.getElementById('searchInput').value.toLowerCase();
